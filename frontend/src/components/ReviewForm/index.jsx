@@ -219,7 +219,7 @@ export default function ReviewForm({ initialData, warnings = [], taxaCandidates 
               placeholder="e.g. 2025-001"
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={12}>
             <FormControl fullWidth>
               <InputLabel>Disposition</InputLabel>
               <Select

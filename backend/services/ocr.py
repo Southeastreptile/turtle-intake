@@ -385,18 +385,6 @@ def extract_intake_fields(image_bytes: bytes) -> IntakeRecord:
     rescuer_first, rescuer_last = _parse_name(full_name)
     logger.info("OCR full_name=%r  →  first=%r  last=%r", full_name, rescuer_first, rescuer_last)
 
-    # ── Species ───────────────────────────────────────────────────────────────
-    # The form has "Species/Common Name:" label with the value on the NEXT line.
-    # Use max_lines=2 to avoid jumping into the rescuer section if the field is blank.
-    common_name = (
-        _find_field_after(raw_text, "Species/Common Name", max_lines=2)
-        or _find_field_after(raw_text, "Common Name", max_lines=2)
-        or ""
-    )
-    # Guard: if it looks like a label or bled into the rescuer's name, clear it
-    if _is_label(common_name) or (full_name and common_name.strip() == full_name.strip()):
-        common_name = ""
-
     # ── Rescuer phone ─────────────────────────────────────────────────────────
     # Try the label first; fall back to regex scan for any 10-digit number.
     raw_phone = _find_field(raw_text, "Contact Number", "Phone", "Phone Number")
