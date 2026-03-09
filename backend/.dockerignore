@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment — never goes into the image
+venv/
+.venv/
+env/
+
+# Secrets — never bake credentials into the image
+.env
+*.json
+
+# Dev/test artifacts
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/

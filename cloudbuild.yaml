@@ -1,0 +1,109 @@
+# Cloud Build pipeline — SERC Wildlife Intake
+#
+# Builds and deploys both the FastAPI backend (Cloud Run) and the React
+# frontend (Firebase Hosting) in a single pipeline.
+#
+# Trigger this manually or connect it to a branch push in the GCP Console.
+#
+# Required substitution variables (set in the Cloud Build trigger or via
+# --substitutions on a manual run):
+#
+#   _REGION           — GCP region for Cloud Run, e.g. us-east4
+#   _SERVICE_NAME     — Cloud Run service name, e.g. serc-intake-api
+#   _API_URL          — Full Cloud Run service URL injected into the React
+#                       build. Known only after the first deploy — update
+#                       the trigger substitution after step 3 completes.
+#                       e.g. https://serc-intake-api-abc123-ue.a.run.app
+#   _FIREBASE_PROJECT — Firebase project ID, e.g. serc-turtle-intake
+#
+# Required Secret Manager secrets:
+#   GOOGLE_SERVICE_ACCOUNT_JSON — raw JSON contents of the service account key
+#   GOOGLE_SHEET_ID             — target spreadsheet ID
+#   FRONTEND_ORIGIN             — comma-separated allowed CORS origins
+#   FIREBASE_TOKEN              — CI token from `firebase login:ci`
+#
+# Cloud Build service account needs these IAM roles:
+#   roles/run.admin
+#   roles/iam.serviceAccountUser  (to act as the Compute service account)
+#   roles/secretmanager.secretAccessor
+#   Firebase Hosting Admin (for firebase deploy)
+
+substitutions:
+  _REGION: us-east4
+  _SERVICE_NAME: serc-intake-api
+  _API_URL: https://serc-intake-api-4d3j3nugya-uk.a.run.app
+  _FIREBASE_PROJECT: serc-turtle-intake
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/FIREBASE_TOKEN/versions/latest
+      env: FIREBASE_TOKEN
+
+steps:
+  # ── Backend ───────────────────────────────────────────────────────────────
+
+  # 1. Build the container image
+  #    Tagged with $BUILD_ID (always set; works for both manual and triggered builds)
+  #    and :latest for the deploy step.
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --tag
+      - gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BUILD_ID
+      - --tag
+      - gcr.io/$PROJECT_ID/$_SERVICE_NAME:latest
+      - backend
+
+  # 2. Push to Container Registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - gcr.io/$PROJECT_ID/$_SERVICE_NAME
+
+  # 3. Deploy to Cloud Run
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - $_SERVICE_NAME
+      - --image=gcr.io/$PROJECT_ID/$_SERVICE_NAME:latest
+      - --region=$_REGION
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-secrets=GOOGLE_SERVICE_ACCOUNT_JSON=GOOGLE_SERVICE_ACCOUNT_JSON:latest,GOOGLE_SHEET_ID=GOOGLE_SHEET_ID:latest,FRONTEND_ORIGIN=FRONTEND_ORIGIN:latest,WRMD_API_KEY=WRMD_API_KEY:latest
+      - --set-env-vars=GOOGLE_SHEET_TAB=daily-exams.csv
+
+  # ── Frontend ──────────────────────────────────────────────────────────────
+
+  # 4. Install frontend dependencies (uses package-lock.json for reproducibility)
+  - name: node:22
+    entrypoint: npm
+    args: [ci, --prefix, frontend]
+
+  # 5. Build the production React bundle.
+  #    REACT_APP_API_BASE_URL is injected here at build time — it overrides
+  #    whatever is in frontend/.env.production, so the bundle always points
+  #    at the Cloud Run service deployed in step 3.
+  - name: node:22
+    entrypoint: npm
+    args: [run, --prefix, frontend, build]
+    env:
+      - REACT_APP_API_BASE_URL=$_API_URL
+
+  # 6. Deploy to Firebase Hosting
+  - name: node:22
+    entrypoint: npx
+    args:
+      - --yes
+      - firebase-tools
+      - deploy
+      - --only=hosting
+      - --project=$_FIREBASE_PROJECT
+      - --non-interactive
+    secretEnv: [FIREBASE_TOKEN]
+
+images:
+  - gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BUILD_ID
+  - gcr.io/$PROJECT_ID/$_SERVICE_NAME:latest

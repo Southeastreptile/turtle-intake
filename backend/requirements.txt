@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+pydantic==2.10.4
+google-cloud-vision==3.9.0
+google-auth==2.37.0
+gspread==6.1.4
+python-dotenv==1.0.1

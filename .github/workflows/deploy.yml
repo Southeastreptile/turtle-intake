@@ -1,0 +1,99 @@
+# GitHub Actions — SERC Wildlife Intake
+#
+# Deploys both services on every push to main:
+#   • Backend  → builds Docker image, pushes to GCR, deploys to Cloud Run
+#   • Frontend → builds React bundle, deploys to Firebase Hosting
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   GCP_SA_KEY  — JSON key of a GCP service account with these roles:
+#                   roles/run.admin
+#                   roles/iam.serviceAccountUser
+#                   roles/artifactregistry.writer
+#                   roles/secretmanager.secretAccessor
+#                   roles/firebasehosting.admin
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: turtle-intake
+  REGION: us-east4
+  SERVICE_NAME: serc-intake-api
+  IMAGE: gcr.io/turtle-intake/serc-intake-api
+  API_URL: https://serc-intake-api-4d3j3nugya-uk.a.run.app
+  FIREBASE_PROJECT: serc-turtle-intake
+
+jobs:
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  deploy-backend:
+    name: Build & deploy backend → Cloud Run
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --tag $IMAGE:${{ github.sha }} \
+            --tag $IMAGE:latest \
+            backend
+
+      - name: Push Docker image
+        run: docker push --all-tags $IMAGE
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image=$IMAGE:latest \
+            --region=$REGION \
+            --platform=managed \
+            --allow-unauthenticated \
+            --set-secrets=GOOGLE_SERVICE_ACCOUNT_JSON=GOOGLE_SERVICE_ACCOUNT_JSON:latest,GOOGLE_SHEET_ID=GOOGLE_SHEET_ID:latest,FRONTEND_ORIGIN=FRONTEND_ORIGIN:latest,WRMD_API_KEY=WRMD_API_KEY:latest \
+            --set-env-vars=GOOGLE_SHEET_TAB=daily-exams.csv \
+            --project=$GCP_PROJECT_ID
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Build & deploy frontend → Firebase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --prefix frontend
+
+      - name: Build React app
+        run: npm run build --prefix frontend
+        env:
+          # Explicitly set at build time — overrides frontend/.env.production
+          REACT_APP_API_BASE_URL: ${{ env.API_URL }}
+
+      - name: Deploy to Firebase Hosting
+        run: npx --yes firebase-tools deploy --only hosting --project $FIREBASE_PROJECT --non-interactive --token ${{ secrets.FIREBASE_TOKEN }}
