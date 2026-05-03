@@ -61,7 +61,7 @@ jobs:
             --region=$REGION \
             --platform=managed \
             --allow-unauthenticated \
-            --set-secrets=GOOGLE_SERVICE_ACCOUNT_JSON=GOOGLE_SERVICE_ACCOUNT_JSON:latest,GOOGLE_SHEET_ID=GOOGLE_SHEET_ID:latest,FRONTEND_ORIGIN=FRONTEND_ORIGIN:latest,WRMD_API_KEY=WRMD_API_KEY:latest \
+            --set-secrets=GOOGLE_SERVICE_ACCOUNT_JSON=GOOGLE_SERVICE_ACCOUNT_JSON:latest,GOOGLE_SHEET_ID=GOOGLE_SHEET_ID:latest,FRONTEND_ORIGIN=FRONTEND_ORIGIN:latest,WRMD_API_KEY=WRMD_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest \
             --set-env-vars=GOOGLE_SHEET_TAB=daily-exams.csv \
             --project=$GCP_PROJECT_ID
 
