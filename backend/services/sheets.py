@@ -215,6 +215,10 @@ def append_intake_record(record: IntakeRecord) -> None:
     """
     Append a single intake record as a new row in the Google Sheet.
     Never overwrites existing rows.
+
+    Uses explicit row targeting (get_all_values → len + 1) instead of
+    append_row, which misplaces the first record when the sheet has only
+    a header row and no data yet.
     """
     if not record.common_name or not record.admitted_at:
         raise ValueError("common_name and admitted_at are required before saving.")
@@ -222,12 +226,17 @@ def append_intake_record(record: IntakeRecord) -> None:
     worksheet = _get_worksheet()
     row = _build_row(record)
 
-    worksheet.append_row(
-        row,
+    # Find the next empty row by counting existing rows (header + data).
+    # This is reliable regardless of how many rows already exist.
+    all_rows = worksheet.get_all_values()
+    next_row = len(all_rows) + 1  # 1-based; always lands below the last row
+
+    worksheet.update(
+        range_name=f"A{next_row}",
+        values=[row],
         value_input_option="USER_ENTERED",  # lets Sheets parse dates naturally
-        insert_data_option="OVERWRITE",     # writes to next empty row; never inserts/shifts rows
-        table_range="A1",
     )
     logger.info(
-        "Appended intake record: %s on %s", record.common_name, record.admitted_at
+        "Appended intake record at row %d: %s on %s",
+        next_row, record.common_name, record.admitted_at,
     )
