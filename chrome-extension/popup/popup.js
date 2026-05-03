@@ -17,7 +17,7 @@ function getBackendUrl() {
   });
 }
 
-/** Format a YYYY-MM-DD string as "Mon D" (e.g. "Apr 22"). */
+/** Format YYYY-MM-DD → "Mon D" (e.g. "Apr 22"). */
 function fmtDate(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
@@ -26,13 +26,10 @@ function fmtDate(iso) {
   });
 }
 
-/** Build a one-line rescuer label, e.g. "John Smith" or empty string. */
 function rescuerLabel(rec) {
-  const parts = [rec.rescuer_first_name, rec.rescuer_last_name].filter(Boolean);
-  return parts.join(" ");
+  return [rec.rescuer_first_name, rec.rescuer_last_name].filter(Boolean).join(" ");
 }
 
-/** Build a one-line location label. */
 function locationLabel(rec) {
   return [rec.address_found, rec.city_found].filter(Boolean).join(", ")
       || [rec.rescuer_address, rec.rescuer_city].filter(Boolean).join(", ")
@@ -54,7 +51,6 @@ function hideStatusBar() {
 function renderRecord(rec) {
   const card = document.createElement("div");
   card.className = "record-card";
-  card.dataset.rowIndex = rec.row_index;
 
   const rescuer  = rescuerLabel(rec);
   const location = locationLabel(rec);
@@ -70,11 +66,11 @@ function renderRecord(rec) {
     </div>
     <div class="card-footer">
       <span class="card-result"></span>
-      <button class="submit-btn">Submit to WRMD</button>
+      <button class="submit-btn">Fill WRMD Form</button>
     </div>
   `;
 
-  card.querySelector(".submit-btn").addEventListener("click", () => submitRecord(rec, card));
+  card.querySelector(".submit-btn").addEventListener("click", () => openWrmd(rec, card));
   return card;
 }
 
@@ -94,9 +90,8 @@ async function loadPending() {
   listEl.innerHTML = "";
   hideStatusBar();
 
-  let backendUrl;
   try {
-    backendUrl = await getBackendUrl();
+    const backendUrl = await getBackendUrl();
     const resp = await fetch(`${backendUrl}/api/intake/pending`);
     if (!resp.ok) throw new Error(`Server returned ${resp.status}`);
     const records = await resp.json();
@@ -117,55 +112,31 @@ async function loadPending() {
   }
 }
 
-// ── Submit to WRMD ────────────────────────────────────────────────────────────
+// ── Open WRMD and pre-fill ────────────────────────────────────────────────────
 
-async function submitRecord(rec, card) {
+async function openWrmd(rec, card) {
   const btn    = card.querySelector(".submit-btn");
   const result = card.querySelector(".card-result");
 
   btn.disabled = true;
-  btn.innerHTML = `<span class="spinner"></span>Submitting…`;
+  btn.innerHTML = `<span class="spinner"></span>Opening…`;
   result.textContent = "";
-  result.className = "card-result";
-  card.classList.remove("errored");
   hideStatusBar();
 
-  try {
-    const backendUrl = await getBackendUrl();
-    const resp = await fetch(`${backendUrl}/api/intake/wrmd-submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(rec),
-    });
+  // Store the record for the content script to pick up
+  await chrome.storage.local.set({ pendingFill: rec });
 
-    const data = await resp.json().catch(() => ({}));
+  // Open WRMD in a new tab (background service worker handles this)
+  chrome.runtime.sendMessage({ type: 'OPEN_WRMD' });
 
-    if (!resp.ok) {
-      throw new Error(data.detail || `Server returned ${resp.status}`);
-    }
+  // Update card to show it's in progress
+  card.classList.add("done");
+  result.textContent = "⏳ Filling form in new tab…";
+  result.classList.add("success");
+  btn.classList.add("hidden");
 
-    // Success
-    card.classList.add("done");
-    const caseNum = data.case_number ? ` — case ${data.case_number}` : "";
-    result.textContent = `✅ Admitted${caseNum}`;
-    result.classList.add("success");
-    btn.classList.add("hidden");
-
-    // If all cards are done, show celebration
-    const remaining = listEl.querySelectorAll(".record-card:not(.done)");
-    if (!remaining.length) {
-      setTimeout(() => {
-        listEl.innerHTML = "";
-        emptyEl.classList.remove("hidden");
-      }, 1200);
-    }
-  } catch (err) {
-    card.classList.add("errored");
-    result.textContent = `❌ ${err.message}`;
-    result.classList.add("error");
-    btn.disabled = false;
-    btn.textContent = "Retry";
-  }
+  // Close popup so user sees the new WRMD tab
+  window.close();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import os
 import httpx
 from fastapi import APIRouter, File, UploadFile, HTTPException, Body, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from models.intake import IntakeRecord, IntakeResponse, PendingRecord, TaxaCandidate
 from services.ocr import extract_intake_fields
@@ -118,7 +119,27 @@ async def save_intake(record: IntakeRecord = Body(...)) -> JSONResponse:
     )
 
 
-# ── Pending records (Chrome extension) ────────────────────────────────────────
+# ── Pending records & processing (Chrome extension) ──────────────────────────
+
+class MarkProcessedRequest(BaseModel):
+    row_index: int
+
+
+@router.post("/intake/mark-processed", status_code=200)
+async def mark_processed(body: MarkProcessedRequest = Body(...)) -> JSONResponse:
+    """
+    Mark a Google Sheet row as processed (wrmd_processed = 1).
+    Called by the Chrome extension after the user saves the record in WRMD.
+    """
+    try:
+        mark_record_processed(body.row_index)
+    except Exception as exc:
+        logger.error("Failed to mark row %d processed: %s", body.row_index, exc)
+        raise HTTPException(status_code=502, detail=f"Could not update sheet: {exc}")
+    return JSONResponse(content={"success": True, "row_index": body.row_index})
+
+
+
 
 @router.get("/intake/pending", response_model=list[PendingRecord])
 async def list_pending() -> list[PendingRecord]:

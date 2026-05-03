@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SERC Wildlife Intake",
-  "version": "1.0.0",
-  "description": "Submit pending Google Sheet intake records directly to WRMD.",
+  "version": "1.1.0",
+  "description": "Fill pending Google Sheet intake records into WRMD automatically.",
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
@@ -17,9 +17,25 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://wrmd.org/patients/create*",
+        "https://www.wrmd.org/patients/create*"
+      ],
+      "js": ["content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
   "permissions": ["storage"],
   "host_permissions": [
     "https://serc-intake-api-4d3j3nugya-uk.a.run.app/*",
-    "http://localhost:8000/*"
+    "http://localhost:8000/*",
+    "https://wrmd.org/*",
+    "https://www.wrmd.org/*"
   ]
 }

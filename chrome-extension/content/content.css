@@ -1,0 +1,63 @@
+#serc-intake-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999999;
+  background: #5c3d1e;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+#serc-intake-banner .serc-banner-label {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#serc-intake-banner .serc-banner-note {
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#serc-intake-banner button {
+  border: none;
+  border-radius: 5px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+#serc-intake-banner .serc-done-btn {
+  background: #4a7c3f;
+  color: #fff;
+}
+
+#serc-intake-banner .serc-done-btn:hover {
+  background: #3a6230;
+}
+
+#serc-intake-banner .serc-dismiss-btn {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+#serc-intake-banner .serc-dismiss-btn:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* Push page content down so banner doesn't cover it */
+body.serc-banner-active {
+  padding-top: 44px !important;
+}
