@@ -34,6 +34,17 @@ class IntakeRecord(BaseModel):
     disposition: str = "Pending"               # Pending | Released | Transferred | Euthanized | Died in Care | DOA
 
 
+class PendingRecord(IntakeRecord):
+    """
+    An IntakeRecord that has been saved to Google Sheets but not yet submitted
+    to WRMD (wrmd_processed == "0").  row_index is the 1-based sheet row number
+    needed to mark the record as processed after a successful WRMD submission.
+    """
+
+    row_index: int
+    admitted_by: str = "Linda Nichols"
+
+
 class IntakeResponse(BaseModel):
     """Response returned to the front-end after extraction."""
 

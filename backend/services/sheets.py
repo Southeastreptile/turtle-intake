@@ -6,6 +6,26 @@ Sheet structure:
   - Only intake-relevant columns are populated; the rest are left as empty strings
   - wrmd_processed (col 74) is always set to "0" on new intake append
   - Existing rows are never overwritten
+
+Column index → IntakeRecord field mapping (0-based index, 1-based col number):
+  index 1  (col 2)  common_name
+  index 2  (col 3)  admitted_at
+  index 5  (col 6)  found_at
+  index 6  (col 7)  address_found
+  index 7  (col 8)  city_found
+  index 9  (col 10) reasons_for_admission
+  index 10 (col 11) care_by_rescuer
+  index 11 (col 12) notes_about_rescue
+  index 15 (col 16) reference_number
+  index 16 (col 17) name
+  index 18 (col 19) disposition
+  index 29 (col 30) rescuer_first_name
+  index 30 (col 31) rescuer_last_name
+  index 31 (col 32) rescuer_phone
+  index 35 (col 36) rescuer_city
+  index 36 (col 37) rescuer_address
+  index 37 (col 38) rescuer_postal_code
+  index 73 (col 74) wrmd_processed
 """
 
 import json
@@ -124,6 +144,71 @@ def _build_row(record: IntakeRecord) -> list[str]:
     row[73] = "0"                             # col 74 — wrmd_processed
 
     return row
+
+
+def get_pending_records() -> list[dict]:
+    """
+    Return all rows where wrmd_processed == "0" (not yet submitted to WRMD).
+
+    Each dict contains all IntakeRecord fields plus ``row_index`` (1-based sheet
+    row number used by mark_record_processed).  Rows with an empty common_name
+    are skipped.  Returns [] on any sheet error so callers never see a 500.
+    """
+    try:
+        worksheet = _get_worksheet()
+        all_rows = worksheet.get_all_values()
+    except Exception as exc:
+        logger.error("get_pending_records: could not read sheet — %s", exc)
+        return []
+
+    pending: list[dict] = []
+    for i, row in enumerate(all_rows):
+        if i == 0:
+            continue  # skip header
+
+        # Pad short rows to avoid index errors
+        if len(row) < 74:
+            row = row + [""] * (74 - len(row))
+
+        if row[73] != "0":
+            continue
+        if not row[1].strip():
+            continue
+
+        sheet_row = i + 1  # gspread update_cell uses 1-based row numbers
+
+        pending.append({
+            "row_index":            sheet_row,
+            "common_name":          row[1].strip(),
+            "admitted_at":          row[2].strip(),
+            "found_at":             row[5].strip() or None,
+            "address_found":        row[6].strip() or None,
+            "city_found":           row[7].strip() or None,
+            "reasons_for_admission": row[9].strip() or None,
+            "care_by_rescuer":      row[10].strip() or None,
+            "notes_about_rescue":   row[11].strip() or None,
+            "reference_number":     row[15].strip() or None,
+            "name":                 row[16].strip() or None,
+            "disposition":          row[18].strip() or "Pending",
+            "rescuer_first_name":   row[29].strip() or None,
+            "rescuer_last_name":    row[30].strip() or None,
+            "rescuer_phone":        row[31].strip() or None,
+            "rescuer_city":         row[35].strip() or None,
+            "rescuer_address":      row[36].strip() or None,
+            "rescuer_postal_code":  row[37].strip() or None,
+        })
+
+    return pending
+
+
+def mark_record_processed(row_index: int) -> None:
+    """
+    Set wrmd_processed (col 74) to "1" for the given 1-based sheet row index.
+    Raises on failure so callers can decide whether to surface the error.
+    """
+    worksheet = _get_worksheet()
+    worksheet.update_cell(row_index, 74, "1")
+    logger.info("Marked sheet row %d as processed (wrmd_processed=1)", row_index)
 
 
 def append_intake_record(record: IntakeRecord) -> None:

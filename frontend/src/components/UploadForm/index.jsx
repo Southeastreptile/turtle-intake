@@ -321,6 +321,37 @@ export default function UploadForm({ onExtracted }) {
           You'll be able to review and edit before saving.
         </Typography>
       )}
+
+      {/* ── Manual entry shortcut ─────────────────────────────────────── */}
+      {!loading && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ textAlign: 'center', mt: selectedFile ? 1.5 : 3 }}
+        >
+          No photo?{' '}
+          <Box
+            component="span"
+            onClick={() => {
+              const today = new Date().toISOString().slice(0, 10);
+              onExtracted(
+                { common_name: '', admitted_at: today, disposition: 'Pending' },
+                [],
+                [],
+              );
+            }}
+            sx={{
+              color: 'primary.main',
+              fontWeight: 600,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              '&:hover': { color: 'primary.dark' },
+            }}
+          >
+            Enter manually
+          </Box>
+        </Typography>
+      )}
     </Box>
   );
 }

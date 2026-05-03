@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "SERC Wildlife Intake",
+  "version": "1.0.0",
+  "description": "Submit pending Google Sheet intake records directly to WRMD.",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_page": "options/options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://serc-intake-api-4d3j3nugya-uk.a.run.app/*",
+    "http://localhost:8000/*"
+  ]
+}

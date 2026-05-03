@@ -1,0 +1,170 @@
+/* SERC earth-tone palette */
+:root {
+  --brown-dark:   #3b2a1a;
+  --brown-mid:    #5c3d1e;
+  --brown-light:  #c8aa88;
+  --cream:        #faf8f4;
+  --cream-border: #e8ddd0;
+  --green:        #4a7c3f;
+  --red:          #b00020;
+  --text:         #3b2a1a;
+  --text-muted:   #8c6b44;
+  --card-bg:      #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 380px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  font-size: 13px;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  background: var(--brown-mid);
+  color: #fff;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.settings-btn:hover { color: #fff; }
+
+/* ── Status bar ── */
+.status-bar {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #e8f5e4;
+  color: var(--green);
+  border-bottom: 1px solid #c3e6b8;
+}
+.status-bar.error {
+  background: #fdecea;
+  color: var(--red);
+  border-color: #f5c6c6;
+}
+
+/* ── Empty / loading ── */
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ── Record cards ── */
+#recordList {
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.record-card {
+  background: var(--card-bg);
+  border: 1.5px solid var(--cream-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: border-color 0.15s;
+}
+
+.record-card.done {
+  background: #f4faf2;
+  border-color: #c3e6b8;
+}
+
+.record-card.errored {
+  border-color: #f5c6c6;
+}
+
+.card-species {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brown-mid);
+  margin-bottom: 3px;
+}
+
+.card-meta {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.card-meta span + span::before {
+  content: " · ";
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-result {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+}
+.card-result.success { color: var(--green); }
+.card-result.error   { color: var(--red); }
+
+/* ── Submit button ── */
+.submit-btn {
+  background: var(--brown-mid);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.submit-btn:hover:not(:disabled) { background: var(--brown-dark); }
+.submit-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ── Spinner ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+/* ── Utility ── */
+.hidden { display: none !important; }

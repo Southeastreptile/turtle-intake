@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SERC Pending Intake</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <span class="title">🐢 SERC Pending Intake</span>
+    <button class="settings-btn" id="settingsBtn" title="Settings">⚙</button>
+  </header>
+
+  <div id="statusBar" class="status-bar hidden"></div>
+
+  <main id="main">
+    <div id="loading" class="empty-state">Loading…</div>
+    <div id="emptyState" class="empty-state hidden">No pending records 🎉</div>
+    <div id="recordList"></div>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
