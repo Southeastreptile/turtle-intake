@@ -182,7 +182,7 @@ async def wrmd_submit(record: PendingRecord = Body(...)) -> JSONResponse:
     )
 
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
             response = await client.post(
                 "https://www.wrmd.org/api/v3/patients/",
                 json=payload,
