@@ -46,6 +46,33 @@ function toUsDate(iso) {
   return `${m}/${d}/${y}`;
 }
 
+/**
+ * Fill a VueDatePicker input by simulating real typing.
+ * Simple value-setting doesn't trigger Vue's internal state;
+ * execCommand('insertText') fires the native InputEvent that Vue listens to.
+ */
+async function fillDatePicker(inputId, isoDate) {
+  if (!isoDate) return;
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  // Clear any existing value first
+  const clearBtn = input.closest('.dp__input_wrap')?.querySelector('[aria-label="Clear value"]')
+                || input.parentElement?.querySelector('button');
+  if (clearBtn) { clearBtn.click(); await new Promise(r => setTimeout(r, 100)); }
+
+  const formatted = toUsDate(isoDate);
+  input.focus();
+  input.select();
+  document.execCommand('selectAll');
+  document.execCommand('insertText', false, formatted);
+
+  // Confirm selection with Enter
+  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }));
+  input.dispatchEvent(new KeyboardEvent('keyup',  { key: 'Enter', code: 'Enter', bubbles: true }));
+  await new Promise(r => setTimeout(r, 150));
+}
+
 // ── Main fill logic ───────────────────────────────────────────────────────────
 
 async function fillForm(rec) {
@@ -58,7 +85,7 @@ async function fillForm(rec) {
   }
 
   // 2. Patient identity
-  fillField('dp-input-date_admitted_at', toUsDate(rec.admitted_at), true);
+  await fillDatePicker('dp-input-date_admitted_at', rec.admitted_at);
   fillField('reference_number', rec.reference_number);
 
   // Species: type into autocomplete — user picks from dropdown
@@ -81,7 +108,7 @@ async function fillForm(rec) {
 
   // 4. Intake section
   fillField('admitted_by', rec.admitted_by || 'Linda Nichols');
-  fillField('dp-input-found_at', toUsDate(rec.found_at || rec.admitted_at), true);
+  await fillDatePicker('dp-input-found_at', rec.found_at || rec.admitted_at);
   fillField('address_found',   rec.address_found || rec.rescuer_address);
   fillField('city_found',      rec.city_found    || rec.rescuer_city);
   fillField('postal_code_found', rec.rescuer_postal_code);
