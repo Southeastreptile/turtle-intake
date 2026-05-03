@@ -30,7 +30,7 @@ turtle-intake/
     ├── main.py                # FastAPI app, CORS, router mount
     ├── routers/intake.py      # POST /api/intake/extract, POST /api/intake/save, GET /api/taxa/search
     ├── services/
-    │   ├── ocr.py             # Cloud Vision → IntakeRecord
+    │   ├── ocr.py             # Gemini 3.1 Pro multimodal → IntakeRecord (returns JSON directly)
     │   ├── sheets.py          # gspread append (74 cols, OVERWRITE mode)
     │   └── wrmd.py            # WRMD species name search
     ├── models/intake.py       # IntakeRecord, IntakeResponse, TaxaCandidate
@@ -51,6 +51,7 @@ turtle-intake/
 | `GOOGLE_CLOUD_PROJECT` | `turtle-intake` |
 | `FRONTEND_ORIGIN` | Allowed CORS origins |
 | `WRMD_API_KEY` | From wrmd.org → account settings → API tokens |
+| `GEMINI_API_KEY` | From https://aistudio.google.com/app/apikey |
 
 ### Frontend (`frontend/.env`)
 ```
