@@ -97,16 +97,18 @@ def extract_intake_fields(image_bytes: bytes) -> IntakeRecord:
     def _str(val) -> str | None:
         return str(val).strip() if val else None
 
+    admitted_at = _date(data.get("admitted_at")) or ""
+
     return IntakeRecord(
         common_name=_str(data.get("common_name")) or "",
-        admitted_at=_date(data.get("admitted_at")) or "",
+        admitted_at=admitted_at,
         rescuer_first_name=_str(data.get("rescuer_first_name")),
         rescuer_last_name=_str(data.get("rescuer_last_name")),
         rescuer_phone=_str(data.get("rescuer_phone")),
         rescuer_address=_str(data.get("rescuer_address")),
         rescuer_city=_str(data.get("rescuer_city")),
         rescuer_postal_code=_str(data.get("rescuer_postal_code")),
-        found_at=_date(data.get("found_at")),
+        found_at=_date(data.get("found_at")) or admitted_at or None,
         address_found=_str(data.get("address_found")),
         city_found=_str(data.get("city_found")),
         reasons_for_admission=_str(data.get("reasons_for_admission")),
