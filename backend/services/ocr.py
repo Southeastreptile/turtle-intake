@@ -47,7 +47,6 @@ Rules:
 - Return only the raw JSON object, starting with { and ending with }
 """.strip()
 
-
 def extract_intake_fields(image_bytes: bytes) -> IntakeRecord:
     """
     Send the intake form image to Gemini 3.1 Pro and parse the response
